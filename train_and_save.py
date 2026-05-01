@@ -1,4 +1,3 @@
-"""Тренирует RandomForest на onti-students-performance и сохраняет артефакты для UI."""
 import joblib
 import pandas as pd
 from pathlib import Path
