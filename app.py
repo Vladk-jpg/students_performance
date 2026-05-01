@@ -1,7 +1,3 @@
-"""Streamlit UI для предсказания оценки студента.
-
-Запуск:  streamlit run app.py
-"""
 import joblib
 import pandas as pd
 import streamlit as st
@@ -25,12 +21,12 @@ def load_artifacts():
 
 
 st.set_page_config(page_title="Прогноз оценки студента", page_icon="🎓", layout="centered")
-st.title("🎓 Прогноз оценки студента")
+st.title("Прогноз оценки студента")
 
 try:
     model, encoder, meta = load_artifacts()
 except FileNotFoundError:
-    st.error("Не найдены артефакты. Сначала прогоните `result-0-41.ipynb` Restart & Run All.")
+    st.error("Не найдены артефакты")
     st.stop()
 
 _r2 = meta.get("metrics", {}).get("r2_score")
@@ -92,9 +88,9 @@ if mode == "По STD_ID из справочника":
         c1, c2 = st.columns(2)
         c1.metric("Средняя оценка студента", f"{stud_full[chosen_id]:.2f}")
         c2.metric("Записей в истории", int(stud_count_full.get(chosen_id, 0)))
-        st.caption("✅ warm-start: модель использует историю студента")
+        st.caption("warm-start: модель использует историю студента")
     else:
-        st.caption("❄️ cold-start: студент не встречался в train, история = глобальное среднее")
+        st.caption("cold-start: студент не встречался в train, история = глобальное среднее")
 else:
     c1, c2 = st.columns(2)
     stud_data["Пол"] = select_labeled("Пол", cats["Пол"])
@@ -105,7 +101,7 @@ else:
     stud_data["Что именно закончил"] = c2.selectbox("Что именно закончил", cats["Что именно закончил"])
     n1 = float(c1.number_input("number1", value=0.0, step=1.0))
     n2 = float(c2.number_input("number2", value=0.0, step=1.0))
-    st.caption("❄️ cold-start: для нового студента история = глобальное среднее")
+    st.caption("cold-start: для нового студента история = глобальное среднее")
 
 st.subheader("Курс / дисциплина")
 c1, c2 = st.columns(2)
@@ -116,7 +112,7 @@ discipline = c2.selectbox("ДИСЦИПЛИНА", cats["ДИСЦИПЛИНА"])
 course = c1.slider("КУРС", 1, 6, 2)
 semester = c2.slider("СЕМЕСТР", 1, 12, 3)
 
-if st.button("🔮 Предсказать оценку", type="primary", use_container_width=True):
+if st.button("Предсказать оценку", type="primary", use_container_width=True):
     row = {
         "НАПРАВЛЕНИЕ": direction,
         "ГОД": year,
@@ -147,11 +143,8 @@ if st.button("🔮 Предсказать оценку", type="primary", use_con
 
     st.success(f"### Прогноз: **{pred_clipped:.2f}** / 5")
     rounded = round(pred_clipped)
-    label = {2: "неуд", 3: "удовлетворительно", 4: "хорошо", 5: "отлично"}.get(rounded, "—")
-    st.info(f"Округлённо: **{rounded}** ({label})")
 
-    st.progress(min(1.0, pred_clipped / 5.0))
     with st.expander("Детали входа модели"):
         st.json(row)
 
-st.caption(f"⚠️ {_cap}. Не для реального выставления оценок.")
+st.caption(f"{_cap}")
