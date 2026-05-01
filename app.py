@@ -47,6 +47,23 @@ stud_count_full = meta.get("stud_count", {})
 disc_full = meta.get("disc_full", {})
 dir_full = meta.get("dir_full", {})
 
+LABELS = {
+    "Пол": {"М": "Мужской", "Ж": "Женский"},
+    "Статус": {"СТ": "Студент", "ВЫП": "Выпускник"},
+    "Форма обучения": {"О": "Очная", "З": "Заочная", "В": "Вечерняя"},
+    "Категория обучения": {"Б": "Бюджет", "П": "Платно", "БП": "Бюджет/Платно"},
+    "Образование": {"НВ": "Неполное высшее", "В": "Высшее", "С": "Среднее", "СС": "Среднее специальное"},
+}
+
+
+def label(col: str, value):
+    return LABELS.get(col, {}).get(value, value)
+
+
+def select_labeled(col: str, options, **kwargs):
+    return st.selectbox(col, options, format_func=lambda v: label(col, v), **kwargs)
+
+
 studs_records = meta["studs_info"]
 studs_by_id = {r["STD_ID"]: r for r in studs_records}
 
@@ -59,14 +76,18 @@ mode = st.radio(
 
 stud_data = {}
 chosen_id = None
+n1 = 0.0
+n2 = 0.0
 if mode == "По STD_ID из справочника":
     ids = sorted(studs_by_id.keys())
     chosen_id = st.selectbox("STD_ID", ids, index=0)
     stud_data = studs_by_id[chosen_id]
+    n1 = float(stud_data.get("number1", 0.0) or 0.0)
+    n2 = float(stud_data.get("number2", 0.0) or 0.0)
     cols = st.columns(3)
-    cols[0].metric("Пол", stud_data["Пол"])
-    cols[1].metric("Статус", stud_data["Статус"])
-    cols[2].metric("Форма обучения", stud_data["Форма обучения"])
+    cols[0].metric("Пол", label("Пол", stud_data["Пол"]))
+    cols[1].metric("Статус", label("Статус", stud_data["Статус"]))
+    cols[2].metric("Форма обучения", label("Форма обучения", stud_data["Форма обучения"]))
     if chosen_id in stud_full:
         c1, c2 = st.columns(2)
         c1.metric("Средняя оценка студента", f"{stud_full[chosen_id]:.2f}")
@@ -76,12 +97,14 @@ if mode == "По STD_ID из справочника":
         st.caption("❄️ cold-start: студент не встречался в train, история = глобальное среднее")
 else:
     c1, c2 = st.columns(2)
-    stud_data["Пол"] = c1.selectbox("Пол", cats["Пол"])
-    stud_data["Статус"] = c2.selectbox("Статус", cats["Статус"])
-    stud_data["Категория обучения"] = c1.selectbox("Категория обучения", cats["Категория обучения"])
-    stud_data["Форма обучения"] = c2.selectbox("Форма обучения", cats["Форма обучения"])
-    stud_data["Образование"] = c1.selectbox("Образование", cats["Образование"])
+    stud_data["Пол"] = select_labeled("Пол", cats["Пол"])
+    stud_data["Статус"] = select_labeled("Статус", cats["Статус"])
+    stud_data["Категория обучения"] = select_labeled("Категория обучения", cats["Категория обучения"])
+    stud_data["Форма обучения"] = select_labeled("Форма обучения", cats["Форма обучения"])
+    stud_data["Образование"] = select_labeled("Образование", cats["Образование"])
     stud_data["Что именно закончил"] = c2.selectbox("Что именно закончил", cats["Что именно закончил"])
+    n1 = float(c1.number_input("number1", value=0.0, step=1.0))
+    n2 = float(c2.number_input("number2", value=0.0, step=1.0))
     st.caption("❄️ cold-start: для нового студента история = глобальное среднее")
 
 st.subheader("Курс / дисциплина")
@@ -107,6 +130,8 @@ if st.button("🔮 Предсказать оценку", type="primary", use_con
         "Что именно закончил": stud_data["Что именно закончил"],
         "КУРС": float(course),
         "СЕМЕСТР": float(semester),
+        "number1": float(n1),
+        "number2": float(n2),
         "stud_mean_grade": float(stud_full.get(chosen_id, global_mean)) if chosen_id else global_mean,
         "stud_count": float(stud_count_full.get(chosen_id, 0)) if chosen_id else 0.0,
         "discipline_mean_grade": float(disc_full.get(discipline, global_mean)),
