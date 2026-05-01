@@ -109,8 +109,9 @@ direction = c1.selectbox("НАПРАВЛЕНИЕ", cats["НАПРАВЛЕНИЕ"
 year = c2.selectbox("ГОД", cats["ГОД"])
 attestation = c1.selectbox("АТТЕСТАЦИЯ", cats["АТТЕСТАЦИЯ"])
 discipline = c2.selectbox("ДИСЦИПЛИНА", cats["ДИСЦИПЛИНА"])
-course = c1.slider("КУРС", 1, 6, 2)
-semester = c2.slider("СЕМЕСТР", 1, 12, 3)
+semester = c1.slider("СЕМЕСТР", 1, 12, 3)
+course = (semester + 1) // 2
+c2.metric("КУРС", course)
 
 if st.button("Предсказать оценку", type="primary", use_container_width=True):
     row = {
